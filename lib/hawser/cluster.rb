@@ -22,7 +22,7 @@ module Hawser
     setting :bucket
 
     def resolve_configuration
-      @namespace ||= name.downcase
+      @namespace_name ||= name.downcase
       self.bucket ||= "#{name.downcase}-amis"
       super
     end
@@ -55,7 +55,7 @@ module Hawser
           task :list => "credentials:establish"
         end
 
-        desc "Make an AMI copy of the running instance at :target. Name the AMI :name and store it in :bucket"
+        desc "Make an AMI copy of the running instance at :target named :name"
         task :bake, [:target, :name] => "baking:bake"
       end
     end

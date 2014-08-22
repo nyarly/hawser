@@ -77,9 +77,7 @@ module Hawser
       cert.not_before = Time.now
       cert.not_after = cert.not_before + self.cert.lifetime.total_seconds
 
-      File.open(task.name, "w") do |pem_file|
-        pem_file.write(cert.to_pem)
-      end
+      cert.to_pem
     end
 
     def load_from_yaml(string)
@@ -124,6 +122,7 @@ module Hawser
     end
 
     def define
+      super
       in_namespace do
         directory user_dir.abspath
 
@@ -162,7 +161,7 @@ module Hawser
 
         namespace :get do
           task :access => :load do
-            if credentials.access_key.nil? or not credentials.secret_key.nil?
+            if credentials.access_key.nil? or credentials.secret_key.nil?
               load_from_csv(File.read(creds_csv.abspath))
             end
           end
@@ -200,7 +199,7 @@ module Hawser
           end
         end
 
-        desc "Set up credentials for #{user} on cluster_name #{cluster_name}"
+        desc "Set up credentials for #{user} for cluster #{cluster_name}"
         task :establish => %w{get set:certificate store}
       end
     end

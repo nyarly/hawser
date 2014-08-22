@@ -12,6 +12,7 @@ module Hawser
 
     def define
       in_namespace do
+        desc "List servers for #{cluster_name}"
         task :list do
           require 'yaml'
           ec2 = AWS::EC2.new(:region => region, :access_key_id => access_key, :secret_access_key => secret_key)
