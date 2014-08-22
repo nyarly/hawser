@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name		= "hawser"
-  spec.version		= "0.0.1"
+  spec.version		= "0.1.0"
   author_list = {
     "Judson Lester" => 'nyarly@gmail.com'
   }
@@ -18,6 +18,14 @@ Gem::Specification.new do |spec|
   # Do this: y$@"
   # !!find lib bin doc spec spec_help -not -regex '.*\.sw.' -type f 2>/dev/null
   spec.files		= %w[
+    lib/hawser.rb
+    lib/hawser/cluster.rb
+    lib/hawser/credentialing.rb
+    lib/hawser/servers.rb
+    lib/hawser/baking-command.rb
+    lib/hawser/baking.rb
+    spec/hawser_spec.rb
+    spec_help/gem_test_suite.rb
   ]
 
   spec.test_file        = "spec_help/gem_test_suite.rb"
@@ -31,8 +39,8 @@ Gem::Specification.new do |spec|
   spec.rdoc_options	+= %w{--main doc/README }
   spec.rdoc_options	+= ["--title", "#{spec.name}-#{spec.version} Documentation"]
 
-  #spec.add_dependency("", "> 0")
   spec.add_dependency("aws-sdk", "> 0")
+  spec.add_dependency("mattock", "> 0")
 
   #spec.post_install_message = "Thanks for installing my gem!"
 end
