@@ -9,6 +9,13 @@ module Hawser
 
     setting :region, "us-west-1"
 
+    setting :block_mappings, {
+      "ami" => "sda1",
+      "root" => "/dev/sda1",
+      "ephemeral0" => "sda2",
+      "swap" => "sda3"
+    }
+
     dir(:ephemeral_dir, "mnt",
         dir(:keyfile_dir, "keys",
             path(:private_key, "pk.pem"),
@@ -56,6 +63,10 @@ module Hawser
         bundle.options += ["-k", private_key.abspath ]
         bundle.options += ["-c", certificate_file.abspath ]
         bundle.options += ["--user", aws_account_id ]
+        bundle.options += ["--block-device-mapping", block_mappings.map do |name, dev|
+          "#{name}=#{dev}"
+        end.join(",")
+        ]
 
         bundle.options += ["--destination", ephemeral_dir.abspath ]
         bundle.options += ["--prefix", prefix ]
@@ -79,6 +90,12 @@ module Hawser
         register.options += ["--region", region]
         register.options += ["--aws-access-key", access_key]
         register.options += ["--aws-secret-key", secret_key]
+      }) &
+      (cmd("rm") {|rm|
+        rm.options = ["-rf", keyfile_dir.abspath]
+      }) &
+      (cmd("rm") {|rm|
+        rm.options = ["-f", File::join(ephemeral_dir.abspath, prefix || "no-such-file"), File::join(ephemeral_dir.abspath, prefix || "no-such-file") + ".part.*" ]
       })
     end
   end

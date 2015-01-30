@@ -72,10 +72,11 @@ module Hawser
 
       cert = OpenSSL::X509::Certificate.new
       cert.version = 2
-      cert.serial = 2
+      cert.serial = OpenSSL::Random.random_bytes(16).each_byte.inject(0){|sum, byte| (sum << 8) + byte}
       cert.public_key = key.public_key
       cert.not_before = Time.now
       cert.not_after = cert.not_before + self.cert.lifetime.total_seconds
+      cert.sign(key, OpenSSL::Digest::SHA256.new)
 
       cert.to_pem
     end
@@ -126,12 +127,23 @@ module Hawser
       in_namespace do
         directory user_dir.abspath
 
-        file signing_cert.abspath => signing_key.abspath do |task|
-          key = File::read(signing_key.abspath)
-          File.write(task.name, signing_cert_content(key))
+        task :umask do
+          File::umask(0077)
         end
 
-        file signing_key.abspath do |task|
+        file signing_cert.abspath => [:umask, signing_key.abspath] do |task|
+          require 'base64'
+
+          key = File::read(signing_key.abspath)
+          cert_pem = signing_cert_content(key)
+          p cert_pem
+          #p OpenSSL::X509::Certificate.new(cert_pem.chomp)
+          File.open(task.name, "wb") do |file|
+            file.print cert_pem
+          end
+        end
+
+        file signing_key.abspath => :umask do |task|
           File.write(task.name, signing_key_content)
         end
 
@@ -141,14 +153,16 @@ module Hawser
           end
         end
 
-        task :store do
+        task :store => :umask do
           require 'yaml'
 
+          puts "Storing credentialing info at #{config_yaml.abspath}"
           File::open(config_yaml.abspath, "w") do |config|
             config.write YAML.dump(Hash[credentials.to_hash.map do |key,value|
               [key.to_s, value]
             end])
           end
+
         end
 
         task :iam => "get:access" do
@@ -160,9 +174,10 @@ module Hawser
         end
 
         namespace :get do
-          task :access => :load do
+          task :access => [:umask, :load] do
             if credentials.access_key.nil? or credentials.secret_key.nil?
               load_from_csv(File.read(creds_csv.abspath))
+              puts "Loaded access key id and key secret from CSV at #{creds_csv.abspath}"
             end
           end
 
@@ -181,11 +196,12 @@ module Hawser
         namespace :set do
           task :password => :iam_user do
             unless credentials.password.nil?
+              puts "Setting login password"
               iam_user.login_policy.password = credentials.password
             end
           end
 
-          task :certificate => [:iam_user, signing_cert.abspath, "get:certificate_id"] do
+          task :certificate => [:umask, :iam_user, signing_cert.abspath, "get:certificate_id"] do
             if !credentials.certificate_id.nil?
               begin
                 iam_user.signing_certificates[credentials.certificate_id].contents
@@ -194,6 +210,7 @@ module Hawser
               end
             end
 
+            puts "Uploading signing certificate at #{signing_cert.abspath}"
             cert = iam_user.signing_certificates.upload(File::read(signing_cert.abspath))
             credentials.certificate_id = cert.id
           end

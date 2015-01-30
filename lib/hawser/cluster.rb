@@ -2,6 +2,7 @@ require 'mattock'
 require 'hawser/credentialing'
 require 'hawser/baking'
 require 'hawser/servers'
+require 'hawser/volumes'
 
 module Hawser
   # Represents a cluster of servers on AWS
@@ -47,12 +48,25 @@ module Hawser
           creds.credentials.proxy_settings_to(servers)
         end
 
+        Hawser::Volumes.new do |volumes|
+          copy_settings_to(volumes)
+          volumes.cluster_name = name
+          creds.copy_settings_to(volumes)
+          creds.credentials.proxy_settings_to(volumes)
+        end
+
         namespace :baking do
-          task :bake => "credentials:establish"
+          task :copy_key => "credentials:establish"
+          task :copy_cert => "credentials:establish"
         end
 
         namespace :servers do
           task :list => "credentials:establish"
+          task :view => "credentials:establish"
+        end
+
+        namespace :volume do
+          task :clone => "credentials:establish"
         end
 
         desc "Make an AMI copy of the running instance at :target named :name"

@@ -31,6 +31,30 @@ module Hawser
               "key_name" => instance.key_name }
           end))
         end
+
+        desc "View details for a server for #{cluster_name}"
+        task :view, [:id] do |task, args|
+          if args[:id].nil?
+            fail ":id is required"
+          end
+          require 'yaml'
+          ec2 = AWS::EC2.new(:region => region, :access_key_id => access_key, :secret_access_key => secret_key)
+
+          instance = ec2.instances.find do |inst|
+            inst.instance_id == args[:id]
+          end
+
+          if instance.nil?
+            fail "Couldn't find instance with id #{args[:id]} in #{ec2.instances.map{|inst| inst.instance_id}}"
+          end
+
+          require 'pp'
+          pp instance
+          pp instance.class.ancestors
+          puts instance.to_yaml
+          pp instance.block_device_mappings
+
+        end
       end
     end
   end
