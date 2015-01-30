@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
     lib/hawser/servers.rb
     lib/hawser/baking-command.rb
     lib/hawser/baking.rb
+    lib/hawser/volumes.rb
     spec/hawser_spec.rb
     spec_help/gem_test_suite.rb
   ]

@@ -136,8 +136,6 @@ module Hawser
 
           key = File::read(signing_key.abspath)
           cert_pem = signing_cert_content(key)
-          p cert_pem
-          #p OpenSSL::X509::Certificate.new(cert_pem.chomp)
           File.open(task.name, "wb") do |file|
             file.print cert_pem
           end
